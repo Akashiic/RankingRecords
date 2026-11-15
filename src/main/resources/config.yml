@@ -1,0 +1,152 @@
+# ===================================================================
+#  TempoRanking - configuracao
+#  Placeholders: veja o README.md (ou use /temporanking placeholders)
+# ===================================================================
+
+# Quantas posicoes o ranking tem (top 1 ate top N). Os placeholders sao
+# registrados de 1 ate este numero.
+tamanho-top: 9
+
+tempo:
+  # De quanto em quanto tempo (segundos) o ranking de tempo e recalculado.
+  atualizar-ranking-segundos: 5
+  # De quanto em quanto tempo (minutos) os dados sao salvos em dados.yml.
+  salvar-minutos: 5
+  # Se false, o tempo em que o jogador esta AFK (Essentials /afk) nao conta.
+  contar-tempo-afk: true
+  # Na primeira inicializacao importa o tempo jogado das estatisticas
+  # vanilla (world/stats/*.json -> stat.playOneMinute), para o ranking ja
+  # comecar com o historico do servidor. Pode refazer com /temporanking importar.
+  importar-estatisticas-vanilla: true
+  # Jogadores que nao aparecem no ranking de tempo (nome, sem diferenciar maiusculas).
+  ignorar-jogadores: []
+
+  # Formato de tempo: meses, dias, horas, minutos e segundos.
+  formato:
+    dias-por-mes: 30
+    # Esconde unidades zeradas (ex.: "3h 0m 5s" vira "3h 5s").
+    esconder-zeros: true
+    # Mostra no maximo X unidades, das maiores para as menores (0 = todas).
+    # Ex.: 3 -> "2 meses 4d 3h" (corta minutos e segundos).
+    maximo-unidades: 0
+    separador: ' '
+    # Separador antes da ultima unidade (ex.: ' e ' -> "3h 4m e 5s").
+    separador-final: ' '
+    unidades:
+      meses:    {singular: ' mes', plural: ' meses'}
+      dias:     {singular: 'd',    plural: 'd'}
+      horas:    {singular: 'h',    plural: 'h'}
+      minutos:  {singular: 'm',    plural: 'm'}
+      segundos: {singular: 's',    plural: 's'}
+
+# -------------------------------------------------------------------
+#  Quem fica FORA dos dois rankings
+# -------------------------------------------------------------------
+ignorar:
+  # OPs (ops.json) nao aparecem nos rankings.
+  ops: true
+  # Permissoes (de para o grupo no LuckPerms):
+  #   temporanking.ignorar        -> fora dos dois rankings
+  #   temporanking.ignorar.tempo  -> fora so do ranking de tempo
+  #   temporanking.ignorar.ricos  -> fora so do ranking de ricos
+  # Ex.: /lp group admin permission set temporanking.ignorar true
+  # Atencao: quem tem a permissao '*' tambem recebe essas.
+  #
+  # Grupos ignorados (sem diferenciar maiusculas). Ex.: [admin, moderador, ajudante]
+  grupos: []
+  # De onde vem o grupo do jogador (os dois podem ficar ligados, vale qualquer um):
+  # 1) Vault (LuckPerms) - todos os grupos do jogador, inclusive herdados.
+  grupo-via-vault: true
+  # 2) Um placeholder do PlaceholderAPI. Pode devolver um ou varios grupos separados
+  #    por virgula/espaco. Ex.: '%vault_groups%' (todos), '%vault_rank%' (principal),
+  #    '%luckperms_primary_group_name%' (precisa da expansao LuckPerms). Deixe '' para desligar.
+  grupo-via-placeholder: '%vault_groups%'
+  # Jogadores offline: permissao e grupo sao consultados em segundo plano e guardados em
+  # ignorados.yml. De quantos em quantos minutos reconsultar cada um.
+  verificar-offline-minutos: 30
+
+ricos:
+  # De quanto em quanto tempo (segundos) o ranking de dinheiro e recalculado.
+  # Ele le os arquivos plugins/Essentials/userdata/*.yml de forma assincrona e
+  # usa o saldo ao vivo (Vault) de quem esta online.
+  atualizar-ranking-segundos: 60
+  # Contas NPC do Essentials (npc: true) entram no ranking?
+  incluir-contas-npc: false
+  # Jogadores que nao aparecem no ranking de dinheiro (ex.: staff/contas do servidor).
+  ignorar-jogadores: []
+
+  formato:
+    # Padrao do java.text.DecimalFormat (sem o simbolo).
+    padrao: '#,##0.00'
+    # Idioma dos separadores: pt-BR -> 1.234.567,89 | en-US -> 1,234,567.89
+    locale: pt-BR
+    simbolo: '$'
+    # Abrevia valores grandes: 150781938.12 -> $150,78M
+    abreviar: false
+    abreviar-padrao: '#,##0.##'
+    abreviar-sufixos: ['K', 'M', 'B', 'T', 'Q']
+
+# Textos dos placeholders combinados {tempo_top_N} e {rico_top_N}.
+# Variaveis: {posicao} {nome} {tempo} / {posicao} {nome} {saldo}
+linhas:
+  tempo: '&f{nome} &7- &a{tempo}'
+  rico: '&f{nome} &7- &a{saldo}'
+  # Usado quando a posicao do top ainda nao tem ninguem.
+  vazio-nome: '&7---'
+  vazio-valor: '&7---'
+  vazio-linha-tempo: '&7---'
+  vazio-linha: '&7---'
+  # Usado em {tempo_minha_posicao}/{rico_minha_posicao} quando o jogador nao esta no ranking.
+  sem-posicao: '-'
+  # Resposta de {tempo_ignorado}/{rico_ignorado} (e %temporanking_tempo_ignorado% no PAPI).
+  ignorado-sim: 'sim'
+  ignorado-nao: 'nao'
+
+hologramas:
+  # Intervalo de atualizacao dos placeholders no Holographic Displays (segundos, minimo 0.1).
+  atualizacao-segundos: 1.0
+  # Placeholders "do proprio jogador" ({tempo_meu_total}, {tempo_minha_sessao}...)
+  # mostram um valor diferente para cada jogador. O HD 2.2.6 nao suporta isso
+  # sozinho, entao o plugin troca o texto no pacote enviado a cada jogador
+  # usando o ProtocolLib. Desligue se der algum conflito.
+  por-jogador: true
+  # Texto mostrado no lugar dos placeholders por jogador se o ProtocolLib nao estiver disponivel.
+  sem-protocollib: '&c(ProtocolLib ausente)'
+  # PlaceholderAPI dentro dos hologramas: escreva {papi:identificador} na linha do HD.
+  #   /hd addline meuholo &7Saldo: &a{papi:vault_eco_balance_formatted}
+  #   /hd addline meuholo &7Nivel: &e{papi:player_level}
+  # Mostra o valor de cada jogador. O plugin detecta sozinho os {papi:...} usados nos
+  # hologramas (database.yml e comandos /hd). Se algum nao atualizar, coloque aqui (sem %):
+  papi-placeholders: []
+
+mensagens:
+  prefixo: '&8[&6Tempo&8] '
+  sem-permissao: '&cVoce nao tem permissao.'
+  so-jogador: '&cUse /tempo <jogador> no console.'
+  jogador-nao-encontrado: '&cJogador &f{jogador} &cnao encontrado.'
+  tempo-proprio:
+    - '&8&m-------------------------------'
+    - '&6&lSEU TEMPO'
+    - '&7Sessao atual: &a{sessao}'
+    - '&7Tempo total: &a{total}'
+    - '&7Posicao no ranking: &e#{posicao}'
+    - '&8&m-------------------------------'
+  tempo-outro:
+    - '&8&m-------------------------------'
+    - '&6&lTEMPO DE &f{jogador}'
+    - '&7Sessao atual: &a{sessao}'
+    - '&7Tempo total: &a{total}'
+    - '&7Posicao no ranking: &e#{posicao}'
+    - '&8&m-------------------------------'
+  offline: '&7(offline)'
+  top-tempo-cabecalho: '&6&lTOP {tamanho} - MAIS TEMPO ONLINE'
+  top-rico-cabecalho: '&6&lTOP {tamanho} - MAIS RICOS'
+  seu-lugar-tempo: '&7Voce: &e#{posicao} &7- &a{tempo}'
+  seu-lugar-rico: '&7Voce: &e#{posicao} &7- &a{saldo}'
+  recarregado: '&aConfiguracao recarregada.'
+  atualizado: '&aRankings atualizados.'
+  salvo: '&aDados salvos.'
+  importando: '&eImportando estatisticas vanilla... aguarde.'
+  importado: '&aImportacao concluida: &f{quantidade} &ajogadores atualizados.'
+  settempo: '&aTempo total de &f{jogador} &adefinido para &f{tempo}&a.'
+  verificando: '&eConsultando permissao/grupo dos jogadores offline... aguarde.'

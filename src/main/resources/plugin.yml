@@ -1,0 +1,42 @@
+name: TempoRanking
+main: com.temporanking.TempoRanking
+version: ${project.version}
+description: Tempo de sessao, tempo total jogado e ranking de tempo e de mais ricos (placeholders para Holographic Displays e PlaceholderAPI).
+softdepend: [HolographicDisplays, ProtocolLib, PlaceholderAPI, Essentials, Vault]
+
+commands:
+  tempo:
+    description: Mostra seu tempo de sessao, tempo total e posicao no ranking.
+    usage: /<command> [jogador|top]
+    aliases: [playtime, tempoonline]
+  ricos:
+    description: Mostra o ranking dos mais ricos do servidor.
+    usage: /<command>
+    aliases: [toprico, topricos]
+  temporanking:
+    description: Administracao do TempoRanking.
+    usage: /<command> <reload|atualizar|salvar|importar|settempo|ignorados|verificar|placeholders>
+    aliases: [tr]
+
+permissions:
+  temporanking.tempo:
+    default: true
+  temporanking.tempo.outros:
+    default: true
+  temporanking.ricos:
+    default: true
+  temporanking.admin:
+    default: op
+  # default false: OP nao ganha automaticamente (use ignorar.ops na config para OPs)
+  temporanking.ignorar:
+    description: Fica fora dos rankings de tempo e de ricos.
+    default: false
+    children:
+      temporanking.ignorar.tempo: true
+      temporanking.ignorar.ricos: true
+  temporanking.ignorar.tempo:
+    description: Fica fora do ranking de tempo.
+    default: false
+  temporanking.ignorar.ricos:
+    description: Fica fora do ranking de ricos.
+    default: false

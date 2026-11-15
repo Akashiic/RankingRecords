@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.temporanking</groupId>
+    <artifactId>TempoRanking</artifactId>
+    <version>1.1.3</version>
+    <packaging>jar</packaging>
+
+    <!--
+      Compila contra os jars do proprio servidor (Crucible 1.7.10 + plugins).
+      Copie para a pasta libs/ (veja README.md):
+        server.jar, HolographicDisplays.jar, ProtocolLib.jar, PlaceholderAPI-2.11.6.jar,
+        Vault.jar, EssentialsX-2.15.0.evernife.v1b.jar
+    -->
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!-- Bytecode Java 8: o remapper de plugins do Crucible usa ASM antigo -->
+        <maven.compiler.release>8</maven.compiler.release>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>local</groupId><artifactId>crucible</artifactId><version>1.7.10</version>
+            <scope>system</scope><systemPath>${project.basedir}/libs/server.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>local</groupId><artifactId>holographicdisplays</artifactId><version>2.2.6</version>
+            <scope>system</scope><systemPath>${project.basedir}/libs/HolographicDisplays.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>local</groupId><artifactId>protocollib</artifactId><version>3.7.0</version>
+            <scope>system</scope><systemPath>${project.basedir}/libs/ProtocolLib.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>local</groupId><artifactId>placeholderapi</artifactId><version>2.11.6</version>
+            <scope>system</scope><systemPath>${project.basedir}/libs/PlaceholderAPI-2.11.6.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>local</groupId><artifactId>vault</artifactId><version>1.7.3</version>
+            <scope>system</scope><systemPath>${project.basedir}/libs/Vault.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>local</groupId><artifactId>essentials</artifactId><version>2.15.0</version>
+            <scope>system</scope><systemPath>${project.basedir}/libs/EssentialsX-2.15.0.evernife.v1b.jar</systemPath>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>TempoRanking-${project.version}</finalName>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+    </build>
+</project>
