@@ -1,6 +1,9 @@
 package com.temporanking;
 
+import com.temporanking.api.RankingUpdateEvent;
+import com.temporanking.api.TopPositionChangeEvent;
 import com.temporanking.data.IgnoreManager;
+import com.temporanking.data.Ranking;
 import com.temporanking.data.MoneyManager;
 import com.temporanking.data.PlaytimeManager;
 import com.temporanking.data.VanillaImporter;
@@ -57,6 +60,7 @@ public final class TempoRanking extends JavaPlugin implements Listener {
 
     @Override
     public void onEnable() {
+        instance = this;
         saveDefaultConfig();
         reloadConfig();
         settings = new Settings(getConfig());
@@ -93,6 +97,7 @@ public final class TempoRanking extends JavaPlugin implements Listener {
 
     @Override
     public void onDisable() {
+        instance = null;
         for (BukkitTask t : tasks) t.cancel();
         tasks.clear();
         if (packets != null) packets.unregister();
@@ -225,7 +230,7 @@ public final class TempoRanking extends JavaPlugin implements Listener {
             @Override public void run() {
                 ignore.refreshOps();
                 ignore.checkOnline();
-                playtime.rebuildRanking(settings.timeIgnored, ignore);
+                refreshTimeRanking();
             }
         }, 1L, s.timeRankingSeconds * 20L));
 
@@ -251,9 +256,58 @@ public final class TempoRanking extends JavaPlugin implements Listener {
         }, save, save));
     }
 
-    void refreshMoney(Runnable done) {
+    void refreshMoney(final Runnable done) {
         Settings s = settings;
-        money.refresh(essentialsUserdataDir(), essentialsStartingBalance(), s.includeNpc, s.moneyIgnored, ignore, done);
+        final Ranking<BigDecimal> before = money.getRanking();
+        money.refresh(essentialsUserdataDir(), essentialsStartingBalance(), s.includeNpc, s.moneyIgnored, ignore,
+                new Runnable() {
+                    @Override public void run() {
+                        fireRankingEvents("ricos", before, money.getRanking());
+                        if (done != null) done.run();
+                    }
+                });
+    }
+
+    // ------------------------------------------------------------- API / eventos
+
+    /** Recalcula o ranking de tempo e dispara os eventos da API. Thread principal. */
+    public void refreshTimeRanking() {
+        Ranking<Long> before = playtime.getRanking();
+        playtime.rebuildRanking(settings.timeIgnored, ignore);
+        fireRankingEvents("tempo", before, playtime.getRanking());
+    }
+
+    /** Recalcula o ranking de ricos (assincrono) e dispara os eventos ao terminar. Thread principal. */
+    public void refreshMoneyRanking() {
+        refreshMoney(null);
+    }
+
+    private <V> void fireRankingEvents(String type, Ranking<V> before, Ranking<V> after) {
+        if (after == null) return;
+        try {
+            // na primeira montagem (inicio do servidor) nao anuncia trocas de posicao
+            if (before != null && before.size() > 0 && before != after) {
+                for (int pos = 1; pos <= settings.topSize; pos++) {
+                    Ranking.Entry<V> o = before.get(pos);
+                    Ranking.Entry<V> n = after.get(pos);
+                    UUID ou = o == null ? null : o.uuid;
+                    UUID nu = n == null ? null : n.uuid;
+                    if (ou == null ? nu == null : ou.equals(nu)) continue;
+                    Bukkit.getPluginManager().callEvent(new TopPositionChangeEvent(type, pos,
+                            ou, o == null ? null : o.name, nu, n == null ? null : n.name));
+                }
+            }
+            Bukkit.getPluginManager().callEvent(new RankingUpdateEvent(type, after.size()));
+        } catch (Throwable t) {
+            getLogger().log(Level.WARNING, "Erro ao disparar eventos do ranking de " + type, t);
+        }
+    }
+
+    private static TempoRanking instance;
+
+    /** Instancia ativa do plugin (null se desligado). */
+    public static TempoRanking getInstance() {
+        return instance;
     }
 
     void checkOffline(boolean force, final Runnable done) {
@@ -261,7 +315,7 @@ public final class TempoRanking extends JavaPlugin implements Listener {
         ids.addAll(money.knownIds());
         ignore.checkOffline(ids, force, new Runnable() {
             @Override public void run() {
-                playtime.rebuildRanking(settings.timeIgnored, ignore);
+                refreshTimeRanking();
                 refreshMoney(done);
                 ignore.save(true);
             }
@@ -319,7 +373,7 @@ public final class TempoRanking extends JavaPlugin implements Listener {
                 Bukkit.getScheduler().runTask(TempoRanking.this, new Runnable() {
                     @Override public void run() {
                         int changed = playtime.applyImport(imp.ticks, imp.names);
-                        playtime.rebuildRanking(settings.timeIgnored, ignore);
+                        refreshTimeRanking();
                         playtime.save(true);
                         getLogger().info("Importacao vanilla: " + imp.filesRead + " arquivos lidos, "
                                 + changed + " jogadores atualizados.");
@@ -350,7 +404,7 @@ public final class TempoRanking extends JavaPlugin implements Listener {
             }
         }
         startTasks();
-        playtime.rebuildRanking(settings.timeIgnored, ignore);
+        refreshTimeRanking();
         refreshMoney(null);
         checkOffline(true, null);
     }

@@ -22,7 +22,7 @@ nenhum grupo e `%vault_groups%` como placeholder de grupo.
 
 ## Instalação
 
-1. Coloque `TempoRanking-1.1.3.jar` em `plugins/` (apague o 1.0.0 se tiver).
+1. Coloque `TempoRanking-1.2.0.jar` em `plugins/` (apague o 1.0.0 se tiver).
 2. Reinicie o servidor (evite `/reload`).
 3. Na primeira inicialização ele importa o tempo jogado das estatísticas vanilla
    (`world/stats/*.json`), assim o ranking já começa com o histórico do servidor.
@@ -97,6 +97,68 @@ são consultados em segundo plano (o seu LuckPerms usa MySQL e recusa esse tipo 
 principal). O resultado fica em `plugins/TempoRanking/ignorados.yml` e é reconsultado a cada
 `verificar-offline-minutos` (padrão 30). Para forçar na hora, use `/temporanking verificar`.
 Para ver quem está fora e por quê, use `/temporanking ignorados`.
+
+## API para Skript (skript-reflect) e outros plugins
+
+Testada com o Skript 2.6.3-crucible e o skript-reflect 2.3-crucible
+([Akashiic/Skript](https://github.com/Akashiic/Skript), [Akashiic/skript-reflect](https://github.com/Akashiic/skript-reflect)).
+O arquivo [`skript/temporanking-exemplos.sk`](skript/temporanking-exemplos.sk) tem um script pronto com
+`/meutempo`, `/toptempo`, um anúncio de novo TOP 1 e um prêmio a cada 10 horas jogadas.
+
+```
+import:
+	com.temporanking.api.TempoRankingAPI
+	com.temporanking.api.TopPositionChangeEvent
+	com.temporanking.api.RankingUpdateEvent
+
+command /meutempo:
+	trigger:
+		send "Total: %TempoRankingAPI.getFormattedTotal(player)% (##%TempoRankingAPI.getTimePosition(player)%)"
+
+on TopPositionChangeEvent:
+	event.getPosition() is 1
+	broadcast "%event.getNewName()% agora e TOP 1 em %event.getType()%!"
+```
+
+No Skript, `#` começa um comentário: para escrever `#` dentro de um texto, use `##`.
+
+### Métodos de `TempoRankingAPI` (todos estáticos)
+
+`player` pode ser um jogador online ou offline. Posições começam em 1 e `-1` quer dizer "sem dados".
+
+| Método | Retorna |
+|---|---|
+| `getTotalMillis(player)` / `getTotalSeconds(player)` | tempo total jogado (inclui a sessão atual) |
+| `getFormattedTotal(player)` | tempo total formatado (`2 meses 3d 4h 5m 6s`) |
+| `getSessionMillis(player)` / `getSessionSeconds(player)` | sessão atual (`-1` se offline) |
+| `getFormattedSession(player)` | sessão atual formatada |
+| `getTimePosition(player)` | posição no ranking de tempo (para ignorados, a posição que teria) |
+| `setTotalMillis(player, ms)` | define o tempo total |
+| `addTotalMillis(player, ms)` | soma tempo (negativo subtrai) |
+| `getTopTimeName(pos)` / `getTopTimeUuid(pos)` | quem está na posição do top de tempo (`null` se vazia) |
+| `getTopTimeMillis(pos)` / `getTopTimeFormatted(pos)` | tempo de quem está na posição |
+| `getTimeRankingSize()` | quantos jogadores estão no ranking de tempo |
+| `getBalance(player)` / `getFormattedBalance(player)` | saldo (`-1`/`null` se desconhecido) |
+| `getMoneyPosition(player)` | posição no ranking de ricos |
+| `getTopMoneyName(pos)` / `getTopMoneyUuid(pos)` | quem está na posição do top de ricos |
+| `getTopMoneyBalance(pos)` / `getTopMoneyFormatted(pos)` | saldo de quem está na posição |
+| `getMoneyRankingSize()` | quantos jogadores estão no ranking de ricos |
+| `isIgnoredTime(player)` / `isIgnoredMoney(player)` | se o jogador está fora do ranking |
+| `formatTime(ms)` / `formatSeconds(s)` / `formatMoney(valor)` | formata como na config |
+| `placeholder("chave", player)` | resolve qualquer placeholder do plugin (ex.: `"tempo_top_1"`) |
+| `getTopSize()` | tamanho do top (`tamanho-top`) |
+| `refresh()` | recalcula os dois rankings agora |
+| `toPlayer("uuid")` | converte um UUID de texto em jogador |
+
+### Eventos
+
+| Evento | Quando | Métodos |
+|---|---|---|
+| `TopPositionChangeEvent` | uma posição do top mudou de dono | `getType()` (`"tempo"`/`"ricos"`), `isTempo()`, `isRicos()`, `getPosition()`, `getOldName()`, `getNewName()`, `getOldUuid()`, `getNewUuid()` |
+| `RankingUpdateEvent` | um ranking foi recalculado (tempo a cada 5 s, ricos a cada 60 s) | `getType()`, `getSize()` |
+
+O `TopPositionChangeEvent` não dispara na primeira montagem do ranking, quando o servidor liga.
+Quando alguém entra ou sai do meio do top, todas as posições abaixo mudam e cada uma dispara um evento.
 
 ## Exemplos de hologramas
 
@@ -183,4 +245,4 @@ Depois rode:
 mvn package
 ```
 
-O jar fica em `target/TempoRanking-1.1.3.jar` (bytecode Java 8, que o remapper de plugins do Crucible aceita).
+O jar fica em `target/TempoRanking-1.2.0.jar` (bytecode Java 8, que o remapper de plugins do Crucible aceita).

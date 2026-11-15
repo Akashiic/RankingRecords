@@ -140,7 +140,7 @@ final class Commands implements CommandExecutor {
             plugin.reloadAll();
             sender.sendMessage(s.prefix() + plugin.settings().msg("recarregado"));
         } else if (sub.equals("atualizar")) {
-            plugin.playtime().rebuildRanking(s.timeIgnored, plugin.ignore());
+            plugin.refreshTimeRanking();
             plugin.refreshMoney(new Runnable() {
                 @Override public void run() {
                     sender.sendMessage(s.prefix() + s.msg("atualizado"));
@@ -218,7 +218,7 @@ final class Commands implements CommandExecutor {
             name = r.name;
         }
         plugin.playtime().setTotal(id, name, ms);
-        plugin.playtime().rebuildRanking(s.timeIgnored, plugin.ignore());
+        plugin.refreshTimeRanking();
         sender.sendMessage(s.prefix() + s.msg("settempo").replace("{jogador}", name).replace("{tempo}", s.time.format(ms)));
     }
 

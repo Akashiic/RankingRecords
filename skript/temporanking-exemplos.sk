@@ -1,0 +1,48 @@
+# Exemplos de uso da API do TempoRanking no Skript (precisa do skript-reflect).
+# Copie para plugins/Skript/scripts/ e rode /sk reload temporanking-exemplos
+
+import:
+	com.temporanking.api.TempoRankingAPI
+	com.temporanking.api.TopPositionChangeEvent
+	com.temporanking.api.RankingUpdateEvent
+
+# /meutempo: mostra seus dados
+command /meutempo:
+	trigger:
+		send "&6Sessao: &a%TempoRankingAPI.getFormattedSession(player)%"
+		send "&6Total: &a%TempoRankingAPI.getFormattedTotal(player)% &7(##%TempoRankingAPI.getTimePosition(player)%)"
+		send "&6Saldo: &a%TempoRankingAPI.getFormattedBalance(player)% &7(##%TempoRankingAPI.getMoneyPosition(player)%)"
+
+# /toptempo: lista o top no chat
+command /toptempo:
+	trigger:
+		send "&6&lTOP TEMPO"
+		loop TempoRankingAPI.getTopSize() times:
+			set {_nome} to TempoRankingAPI.getTopTimeName(loop-number)
+			if {_nome} is set:
+				send "&e%loop-number%. &f%{_nome}% &7- &a%TempoRankingAPI.getTopTimeFormatted(loop-number)%"
+
+# Anuncia quando alguem vira o novo TOP 1
+on TopPositionChangeEvent:
+	event.getPosition() is 1
+	event.getNewName() is set
+	if event.isTempo():
+		broadcast "&6&l[RANKING] &f%event.getNewName()% &7agora e o &6TOP 1 &7em tempo online!"
+	else:
+		broadcast "&6&l[RANKING] &f%event.getNewName()% &7agora e o &6TOP 1 &7mais rico!"
+
+# Guarda o top 1 em variaveis, sempre que o ranking e recalculado
+on RankingUpdateEvent:
+	if event.getType() is "tempo":
+		set {temporanking::top1::tempo} to TempoRankingAPI.getTopTimeName(1)
+	else:
+		set {temporanking::top1::ricos} to TempoRankingAPI.getTopMoneyName(1)
+
+# Recompensa a cada 10 horas jogadas (36000 segundos)
+every 1 minute:
+	loop all players:
+		set {_horas} to floor(TempoRankingAPI.getTotalSeconds(loop-player) / 36000)
+		if {_horas} > {temporanking::premio::%uuid of loop-player%} ? 0:
+			set {temporanking::premio::%uuid of loop-player%} to {_horas}
+			send "&aVoce completou %{_horas} * 10% horas no servidor! Premio entregue." to loop-player
+			# execute console command "eco give %loop-player% 1000"

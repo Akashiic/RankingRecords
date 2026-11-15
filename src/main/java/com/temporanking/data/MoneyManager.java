@@ -39,6 +39,8 @@ public final class MoneyManager {
     private volatile Ranking<BigDecimal> ranking = Ranking.empty();
     /** todas as contas vistas na ultima leitura (inclusive as ignoradas), para checar permissao offline */
     private volatile Set<UUID> lastIds = new HashSet<UUID>();
+    /** saldo de todas as contas lidas, inclusive as ignoradas (para posicao/saldo de quem esta fora do top) */
+    private volatile Map<UUID, BigDecimal> allBalances = new HashMap<UUID, BigDecimal>();
     private BalanceSource source;
 
     public MoneyManager(TempoRanking plugin) {
@@ -137,6 +139,9 @@ public final class MoneyManager {
             if (name == null) continue;
             byId.put(e.getKey(), new Ranking.Entry<BigDecimal>(e.getKey(), name, e.getValue()));
         }
+        Map<UUID, BigDecimal> balances = new HashMap<UUID, BigDecimal>(byId.size() * 2);
+        for (Ranking.Entry<BigDecimal> e : byId.values()) balances.put(e.uuid, e.value);
+        allBalances = balances;
         List<Ranking.Entry<BigDecimal>> list = new ArrayList<Ranking.Entry<BigDecimal>>(byId.size());
         for (Ranking.Entry<BigDecimal> e : byId.values()) {
             if (ignoredLower.contains(e.name.toLowerCase(Locale.ROOT))) continue;
@@ -164,8 +169,7 @@ public final class MoneyManager {
     public BigDecimal getBalance(UUID id) {
         BigDecimal b = onlineBalances.get(id);
         if (b != null) return b;
-        Ranking.Entry<BigDecimal> e = ranking.entryOf(id);
-        return e == null ? null : e.value;
+        return allBalances.get(id);
     }
 
     public void clearOnline(UUID id) {
